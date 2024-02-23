@@ -1,39 +1,49 @@
 import './App.css';
-import Appbar from './components/Appbar/Appbar';
-import { Link, NavLink } from 'react-router-dom';
-import Meal from './components/Meal/Meal';
+import { NavLink, useLocation } from 'react-router-dom';
+import Meal from './type';
 import {Routes, Route} from 'react-router-dom';
 import AddNewMeal from './containers/AddNewMeal/AddNewMeal';
 import React, { useCallback, useEffect, useState } from 'react';
 import Home from './containers/Home/Home';
 import { ApiMeal } from './type';
 import axiosApi from './axiosApi';
+import EditMeal from './containers/EditMeal/EditMeal';
 
 function App() {
     const[meals, setMeals] = useState<Meal[]>([]);
     const[loading, setLoading] = useState(false);
-    let caloriesTotal: number
-
-    const fetchMeals = useCallback(async () => {
-        try {
-            setLoading(true);
-            const {data: apiMeals} = await axiosApi.get<ApiMeal | null>('/meal.json');
-            const newMeals = Object.keys(apiMeals).map(id => ({
-                    ...apiMeals[id]
-            }));
-
-            await setMeals(newMeals);
-
-        }finally {
-            setLoading(false);
-        }
-    }, []);
+    const [caloriesTotal, setCaloriesTotal] = useState(0);
+    const location = useLocation();
 
 
+            const fetchMeals = useCallback(async () => {
+                try {
+                    setLoading(true);
+                    const { data: apiMeals } = await axiosApi.get<ApiMeal | null>('/meal.json');
+
+                    const newMeals: Meal[] = Object.keys(apiMeals).map(id => ({
+                        id,
+                        categories: apiMeals[id].categories,
+                        description: apiMeals[id].description,
+                        calories: parseInt(apiMeals[id].calories), // используем parseFloat для преобразования в число с плавающей запятой
+                    }));
+
+                    const getTotalCalories = await newMeals.reduce((sum, meal) => {
+                        return sum + meal.calories;
+                    }, 0);
+                    setCaloriesTotal(getTotalCalories);
+                    await setMeals(newMeals);
+                } finally {
+                    setLoading(false);
+                }
+            }, []);
 
     useEffect( () => {
-        void fetchMeals()
-    }, [fetchMeals]);
+        if (location.pathname === '/'){
+            void fetchMeals();
+        }
+
+    }, [location.pathname, fetchMeals]);
 
 
   return (
@@ -49,9 +59,9 @@ function App() {
       </header>
         <main>
             <Routes>
-                <Route path="/addNewMeal" element={(<AddNewMeal />)} />
-                <Route path="/edit/:id" element={(<AddNewMeal />)} />
-                <Route path="/" element={(<Home meals={meals} loading={loading} />)} />
+                <Route path="/addNewMeal" element={(<AddNewMeal fetchMeals={fetchMeals} />)} />
+                <Route path="/edit/:id" element={(<EditMeal />)} />
+                <Route path="/" element={(<Home meals={meals} loading={loading} caloriesTotal={caloriesTotal} fetchMeals={fetchMeals}/>)} />
                 <Route path="*" element={(<h1>NOT FOUNT</h1>)} />
             </Routes>
         </main>
