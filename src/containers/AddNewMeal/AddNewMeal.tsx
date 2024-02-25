@@ -7,7 +7,7 @@ import { CATEGORIES } from '../../Helpers/Helpers';
 
 interface Props{
     existingMeal?: Meal;
-    upDate?: (meal: MealAdd) => void
+    upDate: (meal: MealAdd) => void
     isEdit?: boolean;
     isLoading?: boolean;
 
@@ -27,19 +27,21 @@ const AddNewMeal: React.FC<Props> = ({ isEdit, existingMeal = initialState, upDa
     const onSubmit = async (e: React.ChangeEvent<HTMLFormElement>) => {
         e.preventDefault();
         if(isEdit) {
-           upDate && upDate(meal);
+            upDate(meal);
+        } else{
+            try {
+                setLoading(true);
+                await axiosApi.post('/meal.json', meal);
+                navigate("/");
+            } finally {
+                setMeal({
+                    category: "",
+                    description: "",
+                    calories: 0,
+
+                }) ;
+                setLoading(false);
         }
-        try {
-            setLoading(true);
-            await axiosApi.post('/meal.json', meal);
-            navigate("/");
-        } finally {
-            setMeal({
-                category: "",
-                description: "",
-                calories: 0,
-            })
-            setLoading(false);
         }
 
     };
@@ -49,7 +51,6 @@ const AddNewMeal: React.FC<Props> = ({ isEdit, existingMeal = initialState, upDa
             ...prevState,
             [e.target.name]: e.target.value
         }));
-        console.log(meal)
     };
 
 

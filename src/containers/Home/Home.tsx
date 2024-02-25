@@ -17,7 +17,6 @@ const Home:React.FC<Props> = ({meals, loading, caloriesTotal, fetchMeals}) => {
         if (window.confirm('Do you really want to delete?')) {
             await axiosApi.delete('/meal/' + id + '.json');
             await fetchMeals();
-            console.log(id)
         }
     };
 
